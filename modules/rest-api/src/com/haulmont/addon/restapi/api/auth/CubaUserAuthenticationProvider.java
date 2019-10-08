@@ -105,9 +105,12 @@ public class CubaUserAuthenticationProvider implements AuthenticationProvider {
 
             String login = (String) token.getPrincipal();
 
+            @SuppressWarnings("unchecked")
+            Map<String, Object> details = (Map<String, Object>) authentication.getDetails();
+
             UserSession session;
             try {
-                LoginPasswordCredentials credentials = new LoginPasswordCredentials(login, (String) token.getCredentials());
+                LoginPasswordCredentials credentials = new LoginPasswordCredentials(login, (String) token.getCredentials(), null, details);
                 credentials.setIpAddress(ipAddress);
                 credentials.setClientType(ClientType.REST_API);
                 credentials.setClientInfo(makeClientInfo(request.getHeader(HttpHeaders.USER_AGENT)));
@@ -143,8 +146,6 @@ public class CubaUserAuthenticationProvider implements AuthenticationProvider {
 
             UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(authentication.getPrincipal(),
                     authentication.getCredentials(), getRoleUserAuthorities(authentication));
-            @SuppressWarnings("unchecked")
-            Map<String, String> details = (Map<String, String>) authentication.getDetails();
             details.put(SESSION_ID_DETAILS_ATTRIBUTE, session.getId().toString());
             result.setDetails(details);
             return result;
