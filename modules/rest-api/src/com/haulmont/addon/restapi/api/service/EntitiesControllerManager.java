@@ -16,6 +16,7 @@
 
 package com.haulmont.addon.restapi.api.service;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -234,7 +235,7 @@ public class EntitiesControllerManager {
                                        MetaClass metaClass,
                                        Map<String, Object> queryParameters) {
         LoadContext<Entity> ctx = new LoadContext<>(metaClass);
-        String orderedQueryString = createOrderedQueryString(queryString, sort);
+        String orderedQueryString = addOrderBy(queryString, sort);
         LoadContext.Query query = new LoadContext.Query(orderedQueryString);
 
         if (limit != null) {
@@ -270,15 +271,13 @@ public class EntitiesControllerManager {
         return json;
     }
 
-    protected String createOrderedQueryString(String queryString, @Nullable String sort) {
+    protected String addOrderBy(String queryString, @Nullable String sort) {
         if (Strings.isNullOrEmpty(sort)) {
             return queryString;
         }
         StringBuilder orderBy = new StringBuilder(queryString).append(" order by ");
-        sort = sort.replaceAll("\\s+", "");
-        String[] columns = sort.split(",");
-
-        for (String column : columns) {
+        Iterable<String> iterableColumns = Splitter.on(",").trimResults().omitEmptyStrings().split(sort);
+        for (String column : iterableColumns) {
             String order = " asc, ";
             if (column.startsWith("-")) {
                 order = " desc, ";
