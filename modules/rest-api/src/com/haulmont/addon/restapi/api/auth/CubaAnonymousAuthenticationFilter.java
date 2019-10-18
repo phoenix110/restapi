@@ -93,15 +93,16 @@ public class CubaAnonymousAuthenticationFilter implements Filter {
             } else {
                 //anonymous service method or query may be invoked
                 String pathInfo = ((HttpServletRequest) request).getPathInfo();
+                String methodType = ((HttpServletRequest) request).getMethod();
                 Matcher matcher = REGEX_PATTERN.matcher(pathInfo);
                 if (matcher.matches()) {
                     if (SERVICES.equals(matcher.group(1))) {
                         List<String> methodParamNames;
                         String serviceName = matcher.group(2);
                         String methodName = matcher.group(3);
-                        if (GET.equals(((HttpServletRequest) request).getMethod())) {
+                        if (GET.equals(methodType)) {
                             methodParamNames = Collections.list(request.getParameterNames());
-                        } else if (POST.equals(((HttpServletRequest) request).getMethod())) {
+                        } else if (POST.equals(methodType)) {
                             //wrap the request using content caching request wrapper because we need to access the
                             //request body
                             nextRequest = new CachingHttpServletRequestWrapper((HttpServletRequest) request);
@@ -125,7 +126,7 @@ public class CubaAnonymousAuthenticationFilter implements Filter {
                     } else if (QUERIES.equals(matcher.group(4))) {
                         String entityName = matcher.group(5);
                         String queryName = matcher.group(6);
-                        if (GET.equals(((HttpServletRequest) request).getMethod()) || POST.equals(((HttpServletRequest) request).getMethod())) {
+                        if (GET.equals(methodType) || POST.equals(methodType)) {
                             RestQueriesConfiguration.QueryInfo restQueryInfo = restQueriesConfiguration.getQuery(entityName, queryName);
                             if (restQueryInfo != null && restQueryInfo.isAnonymousAllowed()) {
                                 populateSecurityContextWithAnonymousSession();
