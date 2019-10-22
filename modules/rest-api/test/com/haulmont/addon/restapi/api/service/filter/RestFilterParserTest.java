@@ -59,7 +59,7 @@ public class RestFilterParserTest extends CubaClientTestCase {
 
         restFilterParser = new RestFilterParser();
         restFilterParser.metadata = this.metadata;
-        restFilterParser.opManager = new OpManagerImpl();
+        restFilterParser.restOpManager = new RestOpManagerImpl();
     }
 
     @Test
@@ -194,10 +194,6 @@ public class RestFilterParserTest extends CubaClientTestCase {
 
     @Test
     public void testIsNullOperator() throws Exception {
-        new Expectations() {{
-            RandomStringUtils.randomAlphabetic(anyInt); result = null;
-        }};
-
         String data = readDataFromFile("data/restFilter8.json");
         MetaClass metaClass = metadata.getClass("test$TestEntity");
         RestFilterParseResult parseResult = restFilterParser.parse(data, metaClass);

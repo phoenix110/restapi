@@ -27,7 +27,7 @@ public class RestFilterPropertyCondition implements RestFilterCondition {
     private MetaClass metaClass;
     private String queryParamName;
     private Object value;
-    private Op operator;
+    private RestFilterOp operator;
 
     @Override
     public String toJpql() {
@@ -68,11 +68,11 @@ public class RestFilterPropertyCondition implements RestFilterCondition {
         this.value = value;
     }
 
-    public Op getOperator() {
+    public RestFilterOp getOperator() {
         return operator;
     }
 
-    public void setOperator(Op operator) {
+    public void setOperator(RestFilterOp operator) {
         this.operator = operator;
     }
 }
