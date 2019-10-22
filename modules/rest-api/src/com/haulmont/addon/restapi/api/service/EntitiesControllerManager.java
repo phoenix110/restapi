@@ -98,6 +98,9 @@ public class EntitiesControllerManager {
     @Inject
     protected RestApiConfig restApiConfig;
 
+    @Inject
+    protected EntityStates entityStates;
+
     public String loadEntity(String entityName,
                              String entityId,
                              @Nullable String viewName,
@@ -329,6 +332,11 @@ public class EntitiesControllerManager {
         UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl(request.getRequestURL().toString())
                 .path("/{id}")
                 .buildAndExpand(entity.getId().toString());
+
+        if (responseView != null && !entityStates.isLoadedWithView(entity, responseView)) {
+            entity = dataManager.reload(entity, responseView);
+            restControllerUtils.applyAttributesSecurity(entity);
+        }
         String bodyJson = createEntityJson(entity, metaClass, responseView, modelVersion);
         return new ResponseInfo(uriComponents.toUri(), bodyJson);
     }
@@ -347,10 +355,20 @@ public class EntitiesControllerManager {
         Collection<Entity> mainCollectionEntity = new ArrayList<>();
         JsonArray entitiesJsonArray = new JsonParser().parse(entitiesJson).getAsJsonArray();
 
-        for (int i = 0; i < entitiesJsonArray.size(); i++) {
-            String entityJson = entitiesJsonArray.get(i).toString();
-            Entity mainEntity = createEntityFromJson(metaClass, entityJson);
-            mainCollectionEntity.add(mainEntity);
+        if (responseView == null) {
+            for (JsonElement jsonElement : entitiesJsonArray) {
+                Entity mainEntity = createEntityFromJson(metaClass, jsonElement.toString());
+                mainCollectionEntity.add(mainEntity);
+            }
+        } else {
+            for (JsonElement jsonElement : entitiesJsonArray) {
+                Entity mainEntity = createEntityFromJson(metaClass, jsonElement.toString());
+                if (!entityStates.isLoadedWithView(mainEntity, responseView)) {
+                    mainEntity = dataManager.reload(mainEntity, responseView);
+                    restControllerUtils.applyAttributesSecurity(mainEntity);
+                }
+                mainCollectionEntity.add(mainEntity);
+            }
         }
         UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl(request.getRequestURL().toString()).buildAndExpand();
         String bodyJson = createEntitiesJson(mainCollectionEntity, metaClass, responseView, modelVersion);
@@ -391,6 +409,10 @@ public class EntitiesControllerManager {
         //there may be multiple entities in importedEntities (because of @Composition references), so we must find
         // the main entity that will be returned
         Entity entity = getUpdatedEntity(entityName, modelVersion, transformedEntityName, metaClass, entityJson, entityId);
+        if (responseView != null && !entityStates.isLoadedWithView(entity, responseView)) {
+            entity = dataManager.reload(entity, responseView);
+            restControllerUtils.applyAttributesSecurity(entity);
+        }
         String bodyJson = createEntityJson(entity, metaClass, responseView, modelVersion);
         return new ResponseInfo(null, bodyJson);
     }
@@ -404,14 +426,23 @@ public class EntitiesControllerManager {
         checkCanUpdateEntity(metaClass);
 
         JsonArray entitiesJsonArray = new JsonParser().parse(entitiesJson).getAsJsonArray();
-
         Collection<Entity> entities = new ArrayList<>();
-        for (int i = 0; i < entitiesJsonArray.size(); i++) {
-            String entityJson = entitiesJsonArray.get(i).toString();
-            String entityId = entitiesJsonArray.get(i).getAsJsonObject().get("id").getAsString();
-
-            Entity mainEntity = getUpdatedEntity(entityName, modelVersion, transformedEntityName, metaClass, entityJson, entityId);
-            entities.add(mainEntity);
+        if (responseView != null) {
+            for (JsonElement jsonElement : entitiesJsonArray) {
+                String entityId = jsonElement.getAsJsonObject().get("id").getAsString();
+                Entity entity = getUpdatedEntity(entityName, modelVersion, transformedEntityName, metaClass, jsonElement.toString(), entityId);
+                if (entityStates.isLoadedWithView(entity, responseView)) {
+                    entity = dataManager.reload(entity, responseView);
+                    restControllerUtils.applyAttributesSecurity(entity);
+                }
+                entities.add(entity);
+            }
+        } else {
+            for (JsonElement jsonElement : entitiesJsonArray) {
+                String entityId = jsonElement.getAsJsonObject().get("id").getAsString();
+                Entity entity = getUpdatedEntity(entityName, modelVersion, transformedEntityName, metaClass, jsonElement.toString(), entityId);
+                entities.add(entity);
+            }
         }
         String bodyJson = createEntitiesJson(entities, metaClass, responseView, modelVersion);
         return new ResponseInfo(null, bodyJson);
@@ -449,7 +480,6 @@ public class EntitiesControllerManager {
         try {
             importedEntities = entityImportExportService.importEntities(Collections.singletonList(entity),
                     entityImportView, true, restApiConfig.getOptimisticLockingEnabled());
-            importedEntities.forEach(it -> restControllerUtils.applyAttributesSecurity(it));
         } catch (EntityImportException e) {
             throw new RestAPIException("Entity update failed", e.getMessage(), HttpStatus.BAD_REQUEST, e);
         }
