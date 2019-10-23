@@ -19,7 +19,6 @@ package com.haulmont.addon.restapi.api.service.filter;
 import com.haulmont.addon.restapi.api.service.filter.testmodel.TestEnum;
 import com.haulmont.chile.core.model.MetaClass;
 import com.haulmont.cuba.client.testsupport.CubaClientTestCase;
-import com.haulmont.cuba.core.global.filter.OpManagerImpl;
 import mockit.Expectations;
 import mockit.Mocked;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -59,7 +58,7 @@ public class RestFilterParserTest extends CubaClientTestCase {
 
         restFilterParser = new RestFilterParser();
         restFilterParser.metadata = this.metadata;
-        restFilterParser.restOpManager = new RestOpManagerImpl();
+        restFilterParser.restFilterOpManager = new RestFilterOpManagerImpl();
     }
 
     @Test

@@ -18,7 +18,6 @@ package com.haulmont.addon.restapi.api.service.filter;
 
 import com.google.common.base.Strings;
 import com.haulmont.chile.core.model.MetaClass;
-import com.haulmont.cuba.core.global.filter.Op;
 
 /**
  */

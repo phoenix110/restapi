@@ -47,7 +47,7 @@ public class RestFilterParser {
     protected Metadata metadata;
 
     @Inject
-    protected RestOpManager restOpManager;
+    protected RestFilterOpManager restFilterOpManager;
 
     /**
      * Parses the JSON with entities filter and returns an object with JPQL query string and query parameters. The
@@ -178,7 +178,7 @@ public class RestFilterParser {
         }
         MetaProperty metaProperty = propertyPath.getMetaProperty();
 
-        EnumSet<RestFilterOp> opsAvailableForJavaType = restOpManager.availableOps(metaProperty.getJavaType());
+        EnumSet<RestFilterOp> opsAvailableForJavaType = restFilterOpManager.availableOps(metaProperty.getJavaType());
         if (!opsAvailableForJavaType.contains(op)) {
             throw new RestFilterParseException("Operator " + operator + " is not available for java type " +
                     metaProperty.getJavaType().getCanonicalName());

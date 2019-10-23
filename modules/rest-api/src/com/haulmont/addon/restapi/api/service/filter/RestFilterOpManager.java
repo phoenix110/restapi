@@ -19,7 +19,7 @@ package com.haulmont.addon.restapi.api.service.filter;
 
 import java.util.EnumSet;
 
-public interface RestOpManager {
+public interface RestFilterOpManager {
     String NAME = "restapi_OpManager";
 
     EnumSet<RestFilterOp> availableOps(Class javaClass);

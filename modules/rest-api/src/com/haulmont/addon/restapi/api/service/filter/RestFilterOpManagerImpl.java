@@ -20,7 +20,6 @@ package com.haulmont.addon.restapi.api.service.filter;
 import com.google.common.collect.ImmutableList;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.Metadata;
-import com.haulmont.cuba.core.global.MetadataTools;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -32,8 +31,8 @@ import java.util.UUID;
 
 import static com.haulmont.addon.restapi.api.service.filter.RestFilterOp.*;
 
-@Component(RestOpManager.NAME)
-public class RestOpManagerImpl implements RestOpManager {
+@Component(RestFilterOpManager.NAME)
+public class RestFilterOpManagerImpl implements RestFilterOpManager {
 
     @Inject
     protected Metadata metadata;
