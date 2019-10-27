@@ -19,8 +19,10 @@ package com.haulmont.addon.restapi.api.controllers;
 import com.haulmont.addon.restapi.api.exception.ConstraintViolationInfo;
 import com.haulmont.addon.restapi.api.exception.ErrorInfo;
 import com.haulmont.addon.restapi.api.exception.RestAPIException;
-import com.haulmont.cuba.core.global.RemoteException;
-import com.haulmont.cuba.core.global.RowLevelSecurityException;
+import com.haulmont.chile.core.datatypes.Datatype;
+import com.haulmont.chile.core.model.MetaClass;
+import com.haulmont.chile.core.model.MetaPropertyPath;
+import com.haulmont.cuba.core.global.*;
 import com.haulmont.cuba.core.global.validation.CustomValidationException;
 import com.haulmont.cuba.core.global.validation.MethodParametersValidationException;
 import com.haulmont.cuba.core.global.validation.MethodResultValidationException;
@@ -33,6 +35,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.inject.Inject;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.ValidationException;
@@ -45,6 +48,12 @@ public class RestControllerExceptionHandler {
 
     protected static final Collection<Class> SERIALIZABLE_INVALID_VALUE_TYPES =
             Arrays.asList(String.class, Date.class, Number.class, Enum.class, UUID.class);
+
+    @Inject
+    protected UserSessionSource userSessionSource;
+
+    @Inject
+    protected Metadata metadata;
 
     @ExceptionHandler(RestAPIException.class)
     @ResponseBody
@@ -159,7 +168,12 @@ public class RestControllerExceptionHandler {
                     }
                 }
                 if (serializable) {
-                    info.setInvalidValue(invalidValue.toString());
+                    if (invalidValue instanceof Date) {
+                        Datatype datatype = getDatatype(violation);
+                        info.setInvalidValue(datatype.format(invalidValue, userSessionSource.getLocale()));
+                    } else {
+                        info.setInvalidValue(invalidValue);
+                    }
                 } else {
                     info.setInvalidValue(null);
                 }
@@ -172,5 +186,12 @@ public class RestControllerExceptionHandler {
             violationInfos.add(info);
         }
         return violationInfos;
+    }
+
+    protected Datatype getDatatype(ConstraintViolation<?> violation) {
+        MetaClass metaClass = metadata.getClass(violation.getRootBeanClass());
+        String propertyString = violation.getPropertyPath().toString();
+        MetaPropertyPath metaPropertyPath = metadata.getTools().resolveMetaPropertyPath(metaClass, propertyString);
+        return metaPropertyPath.getRange().asDatatype();
     }
 }
