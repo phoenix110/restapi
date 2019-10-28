@@ -20,6 +20,7 @@ import com.haulmont.addon.restapi.api.exception.ConstraintViolationInfo;
 import com.haulmont.addon.restapi.api.exception.ErrorInfo;
 import com.haulmont.addon.restapi.api.exception.RestAPIException;
 import com.haulmont.chile.core.datatypes.Datatype;
+import com.haulmont.chile.core.datatypes.Datatypes;
 import com.haulmont.chile.core.model.MetaClass;
 import com.haulmont.chile.core.model.MetaPropertyPath;
 import com.haulmont.cuba.core.global.Metadata;
@@ -194,7 +195,10 @@ public class RestControllerExceptionHandler {
     protected Datatype getDatatype(ConstraintViolation<?> violation) {
         MetaClass metaClass = metadata.getClass(violation.getRootBeanClass());
         String propertyString = violation.getPropertyPath().toString();
-        MetaPropertyPath metaPropertyPath = metadata.getTools().resolveMetaPropertyPath(metaClass, propertyString);
-        return metaPropertyPath.getRange().asDatatype();
+        MetaPropertyPath propertyPath = metadata.getTools().resolveMetaPropertyPath(metaClass, propertyString);
+        if (propertyPath == null) {
+            return Datatypes.get(Date.class);
+        }
+        return propertyPath.getRange().asDatatype();
     }
 }
