@@ -196,9 +196,6 @@ public class RestControllerExceptionHandler {
         MetaClass metaClass = metadata.getClass(violation.getRootBeanClass());
         String propertyString = violation.getPropertyPath().toString();
         MetaPropertyPath propertyPath = metadata.getTools().resolveMetaPropertyPath(metaClass, propertyString);
-        if (propertyPath == null) {
-            return Datatypes.get(Date.class);
-        }
-        return propertyPath.getRange().asDatatype();
+        return propertyPath == null ? Datatypes.get(Date.class) : propertyPath.getRange().asDatatype();
     }
 }
