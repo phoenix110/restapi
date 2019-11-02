@@ -45,6 +45,9 @@ public interface RestApiConfig extends Config {
     @DefaultBoolean(true)
     boolean getStandardAuthenticationEnabled();
 
+    @Property("cuba.rest.ldap.loginAttribute")
+    String getLoginAttribute();
+
     /**
      * @return list of users that are not allowed to use external authentication. They can use only standard authentication.
      *         Empty list means that everyone is allowed to login using external authentication.
