@@ -15,11 +15,13 @@
  */
 
 buildscript {
-    ext.cubaVersion = '7.2-SNAPSHOT'
+    ext.cubaVersion = '7.1.0'
     ext.addonVersion = rootProject.hasProperty('buildVersion') ? rootProject['buildVersion'] : ext.cubaVersion
     repositories {
         mavenLocal()
-
+        maven {
+            url 'https://maven.aliyun.com/nexus/content/groups/public/'
+        }
         if (System.getenv('HAULMONT_REPOSITORY_URL')) {
             maven {
                 credentials {
@@ -41,6 +43,7 @@ buildscript {
                 }
             }
         }
+
     }
     dependencies {
         classpath "com.haulmont.gradle:cuba-plugin:$cubaVersion"
@@ -54,6 +57,7 @@ configurations {
 
 dependencies {
     bom("com.haulmont.cuba:cuba-global:$cubaVersion")
+//    appComponent('com.haulmont.addon.ldap:ldap-global:1.4.0')
 }
 
 def modulePrefix = 'restapi'
@@ -101,6 +105,7 @@ limitations under the License.
 
 dependencies {
     appComponent("com.haulmont.cuba:cuba-global:$cubaVersion")
+
 }
 
 def hsql = 'org.hsqldb:hsqldb:2.4.1'
@@ -276,7 +281,6 @@ configure(restApiModule) {
 
     dependencies {
         compile(globalModule)
-
         compile("com.haulmont.cuba:cuba-client-tests:$cubaVersion")
 
         // required for Spring multipart resolver

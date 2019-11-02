@@ -32,6 +32,8 @@ import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
+import org.springframework.ldap.filter.Filter;
+import org.springframework.ldap.filter.HardcodedFilter;
 import org.springframework.ldap.support.LdapUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
@@ -134,12 +136,18 @@ public class LdapAuthController implements InitializingBean {
             throw new BadCredentialsException("Bad credentials");
         }
 
-        if (!ldapTemplate.authenticate(LdapUtils.emptyLdapName(), buildPersonFilter(username), password)) {
+        boolean authenticate = ldapTemplate.authenticate(LdapUtils.emptyLdapName(), createUserBaseAndLoginFilter(username).encode(), password);
+        if (!authenticate) {
             log.info("REST API authentication failed: {} {}", username, ipAddress);
             throw new BadCredentialsException("Bad credentials");
         }
-
+        log.info("OAuth2AccessTokenResult:|" + createUserBaseAndLoginFilter(username).encode() + "|--|" + password + "|+++|" + authenticate);
         return oAuthTokenIssuer.issueToken(username, locale, Collections.emptyMap());
+    }
+
+    private Filter createUserBaseAndLoginFilter(String login) {
+        Filter ef = new EqualsFilter(restApiConfig.getLoginAttribute(), login);
+        return ef;
     }
 
     @Override
