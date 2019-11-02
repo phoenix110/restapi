@@ -17,6 +17,8 @@
 package com.haulmont.addon.restapi.api.ldap;
 
 import com.google.common.base.Strings;
+import com.haulmont.addon.ldap.config.LdapPropertiesConfig;
+import com.haulmont.addon.ldap.entity.LdapConfig;
 import com.haulmont.addon.restapi.api.auth.OAuthTokenIssuer;
 import com.haulmont.addon.restapi.api.config.RestApiConfig;
 import com.haulmont.cuba.core.global.Configuration;
