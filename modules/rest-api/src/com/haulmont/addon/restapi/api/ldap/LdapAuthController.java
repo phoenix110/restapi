@@ -17,12 +17,15 @@
 package com.haulmont.addon.restapi.api.ldap;
 
 import com.google.common.base.Strings;
-import com.haulmont.addon.ldap.config.LdapPropertiesConfig;
-import com.haulmont.addon.ldap.entity.LdapConfig;
+import com.haulmont.addon.ldap.dto.UserSynchronizationResultDto;
+import com.haulmont.addon.ldap.service.UserSynchronizationService;
 import com.haulmont.addon.restapi.api.auth.OAuthTokenIssuer;
 import com.haulmont.addon.restapi.api.config.RestApiConfig;
 import com.haulmont.cuba.core.global.Configuration;
+import com.haulmont.cuba.core.global.Messages;
 import com.haulmont.cuba.core.sys.ConditionalOnAppProperty;
+import com.haulmont.cuba.security.auth.AuthenticationService;
+import com.haulmont.cuba.security.global.LoginException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +42,7 @@ import org.springframework.ldap.filter.HardcodedFilter;
 import org.springframework.ldap.support.LdapUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
-import org.springframework.security.core.Authentication;
+import com.haulmont.cuba.security.app.Authentication;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.common.exceptions.ClientAuthenticationException;
 import org.springframework.security.oauth2.common.exceptions.InvalidGrantException;
@@ -79,6 +82,15 @@ public class LdapAuthController implements InitializingBean {
     protected Set<HttpMethod> allowedRequestMethods = Collections.singleton(HttpMethod.POST);
 
     protected WebResponseExceptionTranslator providerExceptionHandler = new DefaultWebResponseExceptionTranslator();
+
+    @Inject
+    private Messages messages;
+
+    @Inject
+    private UserSynchronizationService userSynchronizationService;
+
+    @Inject
+    protected Authentication authentication;
 
     @RequestMapping(value = "/v2/ldap/token", method = RequestMethod.GET)
     public ResponseEntity<OAuth2AccessToken> getAccessToken(Principal principal,
@@ -144,6 +156,18 @@ public class LdapAuthController implements InitializingBean {
             throw new BadCredentialsException("Bad credentials");
         }
         log.info("OAuth2AccessTokenResult:|" + createUserBaseAndLoginFilter(username).encode() + "|--|" + password + "|+++|" + authenticate);
+        log.info("userSynchronizationService:" + userSynchronizationService);
+        authentication.begin();
+
+        try {
+            UserSynchronizationResultDto userSynchronizationResult
+                    = userSynchronizationService.synchronizeUser(username, true, null, null, null);
+            if (userSynchronizationResult.isInactiveUser()) {
+                throw new LoginException("抱歉,用户已经被禁用!");
+            }
+        } finally {
+            authentication.end();
+        }
         return oAuthTokenIssuer.issueToken(username, locale, Collections.emptyMap());
     }
 

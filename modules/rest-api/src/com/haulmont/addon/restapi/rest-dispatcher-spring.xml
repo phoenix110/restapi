@@ -25,7 +25,20 @@
 
     <context:annotation-config/>
     <context:component-scan base-package="com.haulmont.addon.restapi.api"/>
-
+    <context:component-scan base-package="com.haulmont.addon.ldap"/>
+    <bean class="com.haulmont.cuba.web.sys.remoting.WebRemoteProxyBeanCreator">
+        <property name="serverSelector"
+                  ref="cuba_ServerSelector"/>
+        <property name="remoteServices">
+            <map>
+                <entry key="ldap_UserSynchronizationService"
+                       value="com.haulmont.addon.ldap.service.UserSynchronizationService"/>
+                <entry key="ldap_LdapConnectionTesterService" value="com.haulmont.addon.ldap.service.LdapService"/>
+                <entry key="ldap_MatchingRuleService" value="com.haulmont.addon.ldap.service.MatchingRuleService"/>
+                <entry key="ldap_AuthUserService" value="com.haulmont.addon.ldap.service.AuthUserService"/>
+            </map>
+        </property>
+    </bean>
     <!-- Override web implementation bean in main context -->
     <bean id="cuba_Events" class="com.haulmont.cuba.core.sys.EventsImpl"/>
 
@@ -102,7 +115,6 @@
         <property name="clientDetailsService" ref="clientDetailsService"/>
         <property name="tokenEnhancer" ref="tokenEnhancer"/>
     </bean>
-
     <bean id="tokenStore" class="com.haulmont.addon.restapi.api.auth.ClientProxyTokenStore">
         <property name="authenticationKeyGenerator">
             <bean class="com.haulmont.addon.restapi.api.auth.UniqueAuthenticationKeyGenerator"/>
