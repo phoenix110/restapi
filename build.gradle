@@ -15,12 +15,15 @@
  */
 
 buildscript {
-    ext.cubaVersion = '7.1.0'
+    ext.cubaVersion = '7.1.1'
     ext.addonVersion = rootProject.hasProperty('buildVersion') ? rootProject['buildVersion'] : ext.cubaVersion
     repositories {
         mavenLocal()
         maven {
             url 'https://maven.aliyun.com/nexus/content/groups/public/'
+        }
+        maven {
+            url 'http://192.168.56.1:8081/repository/cuba/'
         }
         if (System.getenv('HAULMONT_REPOSITORY_URL')) {
             maven {
@@ -105,6 +108,7 @@ limitations under the License.
 
 dependencies {
     appComponent("com.haulmont.cuba:cuba-global:$cubaVersion")
+    appComponent("com.haulmont.cuba:cuba-web:$cubaVersion")
     appComponent('com.haulmont.addon.ldap:ldap-global:1.4.0')
 }
 
@@ -282,7 +286,7 @@ configure(restApiModule) {
     dependencies {
         compile(globalModule)
         compile("com.haulmont.cuba:cuba-client-tests:$cubaVersion")
-
+        compile("com.haulmont.cuba:cuba-web:$cubaVersion")
         // required for Spring multipart resolver
         compile(bom['commons-fileupload:commons-fileupload'])
 

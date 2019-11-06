@@ -23,7 +23,10 @@ import com.haulmont.addon.restapi.api.auth.OAuthTokenIssuer;
 import com.haulmont.addon.restapi.api.config.RestApiConfig;
 import com.haulmont.cuba.core.global.Configuration;
 import com.haulmont.cuba.core.global.Messages;
+import com.haulmont.cuba.core.sys.AppContext;
 import com.haulmont.cuba.core.sys.ConditionalOnAppProperty;
+import com.haulmont.cuba.core.sys.SecurityContext;
+import com.haulmont.cuba.security.app.TrustedClientService;
 import com.haulmont.cuba.security.auth.AuthenticationService;
 import com.haulmont.cuba.security.global.LoginException;
 import org.apache.commons.lang3.StringUtils;
@@ -42,7 +45,7 @@ import org.springframework.ldap.filter.HardcodedFilter;
 import org.springframework.ldap.support.LdapUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
-import com.haulmont.cuba.security.app.Authentication;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.common.exceptions.ClientAuthenticationException;
 import org.springframework.security.oauth2.common.exceptions.InvalidGrantException;
@@ -52,11 +55,14 @@ import org.springframework.security.oauth2.provider.error.DefaultWebResponseExce
 import org.springframework.security.oauth2.provider.error.WebResponseExceptionTranslator;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.*;
-
+import com.haulmont.cuba.web.auth.WebAuthConfig;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.*;
+import com.haulmont.cuba.security.global.UserSession;
+
+import static org.eclipse.persistence.config.CacheUsageIndirectionPolicy.Exception;
 
 @ConditionalOnAppProperty(property = "cuba.rest.ldap.enabled", value = "true")
 @RestController
@@ -90,7 +96,7 @@ public class LdapAuthController implements InitializingBean {
     private UserSynchronizationService userSynchronizationService;
 
     @Inject
-    protected Authentication authentication;
+    private TrustedClientService trustedClientService;
 
     @RequestMapping(value = "/v2/ldap/token", method = RequestMethod.GET)
     public ResponseEntity<OAuth2AccessToken> getAccessToken(Principal principal,
@@ -157,17 +163,22 @@ public class LdapAuthController implements InitializingBean {
         }
         log.info("OAuth2AccessTokenResult:|" + createUserBaseAndLoginFilter(username).encode() + "|--|" + password + "|+++|" + authenticate);
         log.info("userSynchronizationService:" + userSynchronizationService);
-        authentication.begin();
 
+        WebAuthConfig webAuthConfig = configuration.getConfig(WebAuthConfig.class);
+        UserSession anonymousSession;
         try {
+            anonymousSession = trustedClientService.getSystemSession(webAuthConfig.getTrustedClientPassword());
+        } catch (LoginException e) {
+            throw new RuntimeException("Unable to obtain anonymous session");
+        }
+
+        AppContext.withSecurityContext(new SecurityContext(anonymousSession), () -> {
             UserSynchronizationResultDto userSynchronizationResult
                     = userSynchronizationService.synchronizeUser(username, true, null, null, null);
             if (userSynchronizationResult.isInactiveUser()) {
                 throw new LoginException("抱歉,用户已经被禁用!");
             }
-        } finally {
-            authentication.end();
-        }
+        });
         return oAuthTokenIssuer.issueToken(username, locale, Collections.emptyMap());
     }
 
